@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>angular.js服务</title>
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<style>
+    .bookList {
+        margin-top: 30px;
+    }
+    
+    h1 {
+        text-align: center;
+    }
+</style>
+
+<body>
+    <h1>在线图书</h1>
+    <div ng-app="app" class="container bookList">
+        <div ng-controller="mainCtrl">
+            <div class="col-md-4">
+                <div class="list-group">
+                    <a href="#" ng-click="changeBook(book)" class="list-group-item" ng-repeat="book in books">{{book.title}}</a>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div ng-bind-html="htmlData"></div>
+            </div>
+        </div>
+    </div>
+    <script src="http://cdn.bootcss.com/angular.js/1.6.2/angular.min.js"></script>
+    <!--在页面上绑定html数据的时候 需要使用一个插件-->
+    <script src="http://cdn.bootcss.com/angular-sanitize/1.6.2/angular-sanitize.min.js"></script>
+    <script>
+        var app = angular.module('app', ['ngSanitize'])
+            //创建一个服务 进行远程数据请求
+        app.service('hs', ['$http', function($http) {
+                this.getData = function(cb) {
+                    // 通过get请求获取豆瓣网上即将上映的电影信息
+                    $http.get('http://penkuoer.com/api/v1/book/get_books_by_page.json?page=1')
+                        .then(function(res) {
+                            cb(res.data)
+                        })
+                }
+            }])
+            //通过factory创建一个服务
+        app.factory('ws', ['$http', function($http) {
+            var s = {} //此方式创建的服务需要有一个返回值
+                //根据id获取书籍信息详情
+            s.getDetail = function(id, cb) {
+                $http.get('http://penkuoer.com/api/v1/book/get_book_detail.json?id=' + id)
+                    .then(function(res) {
+                        cb(res.data)
+                    })
+            }
+            return s
+        }])
+        app.controller('mainCtrl', ['$scope', 'hs', 'ws', function($s, hs, ws) {
+            $s.htmlData = ''
+            $s.books = []
+            hs.getData(function(res) {
+                console.dir(res)
+                $s.books = res.data
+            })
+
+            //当数据列表信息点击时触发获取数据详情的事件
+            // $s.changeBook = function(obj) {
+            //     // console.log(obj)
+            //     $s.htmlData = ''
+            //     ws.getDetail(obj.id, function(res) {
+            //         // console.dir(res)
+            //         $s.htmlData = res.data.content //展示书籍详情信息
+            //     })
+            // }
+            $s.changeBook = function(obj) {
+                $s.htmlData = ''
+                ws.getDetail(obj.id, function(res) {
+                    $s.htmlData = res.data.content
+                })
+            }
+        }])
+    </script>
+</body>
+
+</html>

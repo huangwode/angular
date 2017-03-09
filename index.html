@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>angular-小应用</title>
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">-->
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+</head>
+<style>
+
+</style>
+
+<body>
+    <div ng-app="add">
+        <a href="#/">首页</a>
+        <a href="#/list">列表页</a>
+        <a href="#/news">最新资讯</a>
+        <a href="#/me">关于我</a>
+        <div ng-view></div>
+    </div>
+
+    <script src="http://cdn.bootcss.com/angular.js/1.6.2/angular.min.js"></script>
+    <script src="http://cdn.bootcss.com/angular.js/1.6.2/angular-route.min.js"></script>
+    <script src="http://cdn.bootcss.com/angular-sanitize/1.6.2/angular-sanitize.min.js"></script>
+
+    <script>
+        var add = angular.module('add', ['ngRoute', 'ngSanitize'])
+        add.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
+            $routeProvider
+                .when('/', {
+                    template: '<h1>这是首页</h1>'
+                })
+                .when('/list', {
+                    template: '<h1>这是list页面</h1>'
+                })
+                .when('/news', {
+                    // template: '<h1>这是news页面</h1>'
+                    templateUrl: './tpl/list.html',
+                    controller: 'listController'
+                })
+                .when('/me', {
+                    template: '<h1>这是me页面</h1>'
+                })
+                .when('/book_detail/:id', {
+                    templateUrl: './tpl/detail.html',
+                    controller: 'detailController'
+                })
+                .otherwise({
+                    redirecTo: '/'
+                })
+            $locationProvider.hashPrefix('')
+
+        }])
+        add.controller('detailController', ['$scope', 'myserver', '$routeParams', function($s, my, $routeParams) {
+            console.log($routeParams.id)
+            $s.title = ''
+            $s.content = ''
+            my.getDataById($routeParams.id, function(res) {
+                $s.title = res.data.title
+                $s.content = res.data.content
+                console.log(res.data)
+            })
+        }])
+
+        //  控制
+        add.controller('listController', ['$scope', 'myserver', function($scope, my) {
+            $scope.list = []
+            my.getData(function(res) {
+                $scope.list = res.data
+                    // console.log(res.data)
+            })
+        }])
+
+        add.factory('myserver', ['$http', function($http) {
+            var books = {}
+                // 获取数据列表
+            books.getData = function(callback) {
+                    $http.get('http://penkuoer.com/api/v1/book/get_books_by_page.json?page=1')
+                        .then(function(res) {
+                            callback(res.data)
+                            console.log(res.data)
+                        })
+                }
+                //    根据id获取数据
+            books.getDataById = function(id, cb) {
+                $http.get('http://penkuoer.com/api/v1/book/get_book_detail.json?id=' + id)
+                    .then(function(res) {
+                        cb(res.data)
+                    })
+            }
+            return books
+
+        }])
+    </script>
+</body>
+
+</html>
